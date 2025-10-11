@@ -13,5 +13,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 });
 
+Route::prefix('karyawan')->group(function () {
+    Route::get('/dashboard', function () {
+        return Inertia::render('Karyawan/Dashboard');
+    })->name('karyawan.dashboard');
+
+    Route::get('/keuangan', function () {
+        return Inertia::render('Karyawan/Keuangan');
+    })->name('karyawan.keuangan');
+
+    Route::get('/kolam', function () {
+        return Inertia::render('Karyawan/Kolam');
+    })->name('karyawan.kolam');
+});
+
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

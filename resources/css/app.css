@@ -141,3 +141,15 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Ubah warna ikon kalender pada input datetime-local */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0%) invert(0%);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: brightness(0%) invert(0%);
+  cursor: pointer;
+}
