@@ -1,35 +1,39 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Http\Controllers\User\DashboardController as UserDashboard;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    return view('main.welcome');
 });
 
-Route::prefix('karyawan')->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('Karyawan/Dashboard');
-    })->name('karyawan.dashboard');
+// Redirect setelah login berdasarkan role
+Route::get('/dashboard', function () {
+    if (auth()->user()->isAdmin()) {
+        return redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('user.dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
-    Route::get('/keuangan', function () {
-        return Inertia::render('Karyawan/Keuangan');
-    })->name('karyawan.keuangan');
-
-    Route::get('/kolam', function () {
-        return Inertia::render('Karyawan/Kolam');
-    })->name('karyawan.kolam');
+// Admin Routes
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+    // Tambahkan route admin lainnya di sini
 });
 
-Route::get('/owner/dashboard', function () {
-    return Inertia::render('Owner/Dashboard');
-})->name('owner.dashboard');
+// User Routes
+Route::middleware(['auth', 'verified', 'user'])->prefix('user')->name('user.')->group(function () {
+    Route::get('/dashboard', [UserDashboard::class, 'index'])->name('dashboard');
+    // Tambahkan route user lainnya di sini
+});
 
-require __DIR__.'/settings.php';
+// Profile Routes (accessible by both)
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
 require __DIR__.'/auth.php';
