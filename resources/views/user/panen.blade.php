@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Panen</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
@@ -147,18 +148,128 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <h1 class="text-xl font-bold">Dashboard Panen</h1>
+                <h1 class="text-xl font-bold">Data Panen</h1>
                 <div class="flex items-center space-x-3">
                     <span class="text-sm">{{ Auth::user()->name }}</span>
                 </div>
             </div>
 
-            <!-- Dashboard Section -->
+            <!-- Content Section -->
             <div class="p-6">
-                <h2 class="text-2xl font-bold mb-6">isi Utama</h2>
+                <!-- Button Tambah -->
+                <div class="mb-6">
+                    <button onclick="openModal('add')" class="bg-sipkbi-green hover:bg-sipkbi-dark text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Tambah Panen</span>
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-sipkbi-green text-white">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">No</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Kolam</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Jenis Ikan</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Tanggal Panen</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Berat (Kg)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Jumlah Ikan</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Total Pendapatan</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Data akan dimuat di sini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
-    </div>
+
+        <!-- Modal Form -->
+        <div id="modal-root" class="fixed inset-0 z-50 hidden">
+            <div id="modal-overlay" class="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div id="modal" class="modal-transition modal-hidden fixed inset-0 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 id="modal-title" class="text-2xl font-bold">Tambah Panen</h2>
+                            <button id="modal-close-btn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <form id="panen-form" class="space-y-4">
+                            <input type="hidden" id="id">
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Kolam</label>
+                                    <select id="kolam_id" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                        <option value="">Pilih Kolam</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Jenis Ikan</label>
+                                    <select id="jenis_id" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                        <option value="">Pilih Jenis Ikan</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Tanggal Panen</label>
+                                <input type="date" id="tanggal_panen" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Berat Total (Kg)</label>
+                                    <input type="number" step="0.01" id="berat_total_kg" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Jumlah Ikan</label>
+                                    <input type="number" id="jumlah_ikan" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Harga per Kg (Rp)</label>
+                                    <input type="number" step="0.01" id="harga_per_kg" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Total Pendapatan (Rp)</label>
+                                <input type="number" step="0.01" id="total_pendapatan" readonly class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 cursor-not-allowed">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Catatan</label>
+                                <textarea id="catatan" rows="3" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent"></textarea>
+                            </div>
+
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" id="modal-cancel-btn" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                                    Batal
+                                </button>
+                                <button type="submit" class="px-6 py-2 bg-sipkbi-green hover:bg-sipkbi-dark text-white rounded-lg transition">
+                                    Simpan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     <!-- JavaScript -->
     <script>
@@ -203,6 +314,268 @@
         overlay.addEventListener('click', () => {
             sidebar.classList.add('-translate-x-full');
             overlay.classList.add('hidden');
+        });
+
+        const modalRoot = document.getElementById('modal-root');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const panenForm = document.getElementById('panen-form');
+
+        let isEditMode = false;
+        let kolamList = [];
+        let jenisIkanList = [];
+
+        // Auto calculate total pendapatan
+        document.getElementById('berat_total_kg').addEventListener('input', calculateTotal);
+        document.getElementById('harga_per_kg').addEventListener('input', calculateTotal);
+
+        function calculateTotal() {
+            const berat = parseFloat(document.getElementById('berat_total_kg').value) || 0;
+            const harga = parseFloat(document.getElementById('harga_per_kg').value) || 0;
+            document.getElementById('total_pendapatan').value = (berat * harga).toFixed(2);
+        }
+
+        function openModal(mode, data = null) {
+            isEditMode = mode === 'edit';
+            modalTitle.textContent = isEditMode ? 'Edit Panen' : 'Tambah Panen';
+
+            if (isEditMode && data) {
+                document.getElementById('id').value = data.id;
+                document.getElementById('kolam_id').value = data.kolam_id;
+                document.getElementById('jenis_id').value = data.jenis_id;
+                document.getElementById('tanggal_panen').value = data.tanggal_panen;
+                document.getElementById('berat_total_kg').value = data.berat_total_kg;
+                document.getElementById('jumlah_ikan').value = data.jumlah_ikan;
+                document.getElementById('harga_per_kg').value = data.harga_per_kg;
+                document.getElementById('total_pendapatan').value = data.total_pendapatan;
+                document.getElementById('catatan').value = data.catatan || '';
+            } else {
+                panenForm.reset();
+                document.getElementById('id').value = '';
+            }
+
+            modalRoot.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('modal-hidden');
+                modal.classList.add('modal-visible');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.remove('modal-visible');
+            modal.classList.add('modal-hidden');
+            setTimeout(() => {
+                modalRoot.classList.add('hidden');
+                panenForm.reset();
+            }, 180);
+        }
+
+        modalCloseBtn.addEventListener('click', closeModal);
+        modalCancelBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', closeModal);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modalRoot.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        }
+
+        async function loadKolam() {
+            try {
+                const response = await fetch('/api/kolam');
+                const result = await response.json();
+                kolamList = result.data || [];
+
+                const select = document.getElementById('kolam_id');
+                select.innerHTML = '<option value="">Pilih Kolam</option>' +
+                    kolamList.map(k => `<option value="${k.id}">${k.nama_kolam}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading kolam:', error);
+            }
+        }
+
+        async function loadJenisIkan() {
+            try {
+                const response = await fetch('/api/jenis-ikan');
+                const result = await response.json();
+                jenisIkanList = result.data || [];
+
+                const select = document.getElementById('jenis_id');
+                select.innerHTML = '<option value="">Pilih Jenis Ikan</option>' +
+                    jenisIkanList.map(j => `<option value="${j.id}">${j.nama_ikan}</option>`).join('');
+            } catch (error) {
+                console.error('Error loading jenis ikan:', error);
+            }
+        }
+
+        async function loadPanen() {
+            try {
+                const response = await fetch('/api/panen');
+                if (!response.ok) throw new Error('Gagal memuat data');
+
+                const result = await response.json();
+                const data = result.data || [];
+
+                renderTable(data);
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Gagal memuat data panen', 'error');
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                            Belum ada data panen
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map((item, index) => {
+                const kolam = kolamList.find(k => k.id == item.kolam_id);
+                const jenis = jenisIkanList.find(j => j.id == item.jenis_id);
+
+                return `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td class="px-6 py-4 text-sm">${index + 1}</td>
+                    <td class="px-6 py-4 text-sm font-medium">${kolam ? kolam.nama_kolam : '-'}</td>
+                    <td class="px-6 py-4 text-sm">${jenis ? jenis.nama_ikan : '-'}</td>
+                    <td class="px-6 py-4 text-sm">${new Date(item.tanggal_panen).toLocaleDateString('id-ID')}</td>
+                    <td class="px-6 py-4 text-sm">${parseFloat(item.berat_total_kg).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-sm">${parseInt(item.jumlah_ikan).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-green-600">Rp ${parseFloat(item.total_pendapatan).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center space-x-2">
+                            <button onclick='editPanen(${JSON.stringify(item)})' class="text-blue-600 hover:text-blue-800" title="Edit">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="deletePanen(${item.id})" class="text-red-600 hover:text-red-800" title="Hapus">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        panenForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                kolam_id: document.getElementById('kolam_id').value,
+                jenis_id: document.getElementById('jenis_id').value,
+                tanggal_panen: document.getElementById('tanggal_panen').value,
+                berat_total_kg: document.getElementById('berat_total_kg').value,
+                jumlah_ikan: document.getElementById('jumlah_ikan').value,
+                harga_per_kg: document.getElementById('harga_per_kg').value,
+                total_pendapatan: document.getElementById('total_pendapatan').value,
+                catatan: document.getElementById('catatan').value
+            };
+
+            try {
+                let url = '/api/panen';
+                let method = 'POST';
+
+                if (isEditMode) {
+                    const id = document.getElementById('id').value;
+                    url = `/api/panen/${id}`;
+                    method = 'PUT';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menyimpan data');
+                }
+
+                showAlert(result.message || 'Data berhasil disimpan', 'success');
+                closeModal();
+                loadPanen();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Gagal menyimpan data', 'error');
+            }
+        });
+
+        function editPanen(data) {
+            openModal('edit', data);
+        }
+
+        async function deletePanen(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus data panen ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/panen/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menghapus data');
+                }
+
+                showAlert(result.message || 'Data berhasil dihapus', 'success');
+                loadPanen();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Gagal menghapus data', 'error');
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+
+            alertDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+            alertDiv.textContent = message;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadKolam();
+            await loadJenisIkan();
+            await loadPanen();
         });
 
     </script>

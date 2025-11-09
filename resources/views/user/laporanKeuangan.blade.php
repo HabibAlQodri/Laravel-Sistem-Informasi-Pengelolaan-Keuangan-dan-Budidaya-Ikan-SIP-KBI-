@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Laporan keuangan</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
@@ -147,18 +148,106 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <h1 class="text-xl font-bold">Dashboard Laporan keuangan</h1>
+                <h1 class="text-xl font-bold">Laporan Keuangan</h1>
                 <div class="flex items-center space-x-3">
                     <span class="text-sm">{{ Auth::user()->name }}</span>
                 </div>
             </div>
 
-            <!-- Dashboard Section -->
+            <!-- Content Section -->
             <div class="p-6">
-                <h2 class="text-2xl font-bold mb-6">isi Utama</h2>
+                <!-- Button Tambah -->
+                <div class="mb-6">
+                    <button onclick="openModal('add')" class="bg-sipkbi-green hover:bg-sipkbi-dark text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Tambah Laporan</span>
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-sipkbi-green text-white">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">No</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Bulan</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Total Pendapatan</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Total Pengeluaran</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Laba Bersih</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Catatan</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Data akan dimuat di sini -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
-    </div>
+
+        <!-- Modal Form -->
+        <div id="modal-root" class="fixed inset-0 z-50 hidden">
+            <div id="modal-overlay" class="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div id="modal" class="modal-transition modal-hidden fixed inset-0 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 id="modal-title" class="text-2xl font-bold">Tambah Laporan Keuangan</h2>
+                            <button id="modal-close-btn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <form id="laporan-form" class="space-y-4">
+                            <input type="hidden" id="id">
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Bulan</label>
+                                <input type="month" id="bulan" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Total Pendapatan (Rp)</label>
+                                    <input type="number" step="0.01" id="total_pendapatan" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Total Pengeluaran (Rp)</label>
+                                    <input type="number" step="0.01" id="total_pengeluaran" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Laba Bersih (Rp)</label>
+                                <input type="number" step="0.01" id="laba_bersih" readonly class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 cursor-not-allowed">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Catatan</label>
+                                <textarea id="catatan" rows="3" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent"></textarea>
+                            </div>
+
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" id="modal-cancel-btn" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                                    Batal
+                                </button>
+                                <button type="submit" class="px-6 py-2 bg-sipkbi-green hover:bg-sipkbi-dark text-white rounded-lg transition">
+                                    Simpan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     <!-- JavaScript -->
     <script>
@@ -205,6 +294,232 @@
             overlay.classList.add('hidden');
         });
 
+        const modalRoot = document.getElementById('modal-root');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const laporanForm = document.getElementById('laporan-form');
+
+        let isEditMode = false;
+
+        // Auto calculate laba bersih
+        document.getElementById('total_pendapatan').addEventListener('input', calculateLaba);
+        document.getElementById('total_pengeluaran').addEventListener('input', calculateLaba);
+
+        function calculateLaba() {
+            const pendapatan = parseFloat(document.getElementById('total_pendapatan').value) || 0;
+            const pengeluaran = parseFloat(document.getElementById('total_pengeluaran').value) || 0;
+            document.getElementById('laba_bersih').value = (pendapatan - pengeluaran).toFixed(2);
+        }
+
+        function openModal(mode, data = null) {
+            isEditMode = mode === 'edit';
+            modalTitle.textContent = isEditMode ? 'Edit Laporan Keuangan' : 'Tambah Laporan Keuangan';
+
+            if (isEditMode && data) {
+                document.getElementById('id').value = data.id;
+                document.getElementById('bulan').value = data.bulan;
+                document.getElementById('total_pendapatan').value = data.total_pendapatan;
+                document.getElementById('total_pengeluaran').value = data.total_pengeluaran;
+                document.getElementById('laba_bersih').value = data.laba_bersih;
+                document.getElementById('catatan').value = data.catatan || '';
+            } else {
+                laporanForm.reset();
+                document.getElementById('id').value = '';
+            }
+
+            modalRoot.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('modal-hidden');
+                modal.classList.add('modal-visible');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.remove('modal-visible');
+            modal.classList.add('modal-hidden');
+            setTimeout(() => {
+                modalRoot.classList.add('hidden');
+                laporanForm.reset();
+            }, 180);
+        }
+
+        modalCloseBtn.addEventListener('click', closeModal);
+        modalCancelBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', closeModal);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modalRoot.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        }
+
+        async function loadLaporan() {
+            try {
+                const response = await fetch('/api/laporan-keuangan');
+                if (!response.ok) throw new Error('Gagal memuat data');
+
+                const result = await response.json();
+                const data = result.data || [];
+
+                renderTable(data);
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Gagal memuat data laporan keuangan', 'error');
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            Belum ada data laporan keuangan
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map((item, index) => {
+                const bulanDate = new Date(item.bulan + '-01');
+                const labaBersih = parseFloat(item.laba_bersih);
+                const isProfit = labaBersih >= 0;
+
+                return `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td class="px-6 py-4 text-sm">${index + 1}</td>
+                    <td class="px-6 py-4 text-sm font-medium">${bulanDate.toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}</td>
+                    <td class="px-6 py-4 text-sm text-green-600 font-semibold">Rp ${parseFloat(item.total_pendapatan).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-sm text-red-600 font-semibold">Rp ${parseFloat(item.total_pengeluaran).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-sm font-bold ${isProfit ? 'text-green-600' : 'text-red-600'}">
+                        Rp ${Math.abs(labaBersih).toLocaleString('id-ID')}
+                        ${!isProfit ? '(Rugi)' : ''}
+                    </td>
+                    <td class="px-6 py-4 text-sm">${item.catatan || '-'}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center space-x-2">
+                            <button onclick='editLaporan(${JSON.stringify(item)})' class="text-blue-600 hover:text-blue-800" title="Edit">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="deleteLaporan(${item.id})" class="text-red-600 hover:text-red-800" title="Hapus">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        laporanForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                bulan: document.getElementById('bulan').value,
+                total_pendapatan: document.getElementById('total_pendapatan').value,
+                total_pengeluaran: document.getElementById('total_pengeluaran').value,
+                laba_bersih: document.getElementById('laba_bersih').value,
+                catatan: document.getElementById('catatan').value
+            };
+
+            try {
+                let url = '/api/laporan-keuangan';
+                let method = 'POST';
+
+                if (isEditMode) {
+                    const id = document.getElementById('id').value;
+                    url = `/api/laporan-keuangan/${id}`;
+                    method = 'PUT';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menyimpan data');
+                }
+
+                showAlert(result.message || 'Data berhasil disimpan', 'success');
+                closeModal();
+                loadLaporan();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Gagal menyimpan data', 'error');
+            }
+        });
+
+        function editLaporan(data) {
+            openModal('edit', data);
+        }
+
+        async function deleteLaporan(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus laporan keuangan ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/laporan-keuangan/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menghapus data');
+                }
+
+                showAlert(result.message || 'Data berhasil dihapus', 'success');
+                loadLaporan();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Gagal menghapus data', 'error');
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+
+            alertDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+            alertDiv.textContent = message;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLaporan();
+        });
     </script>
 </body>
 </html>

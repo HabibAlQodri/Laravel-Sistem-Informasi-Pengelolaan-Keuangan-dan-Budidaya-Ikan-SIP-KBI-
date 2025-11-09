@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('penjualan', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_panen')->constrained('panen')->onDelete('cascade');
+            $table->foreignId('panen_id')->constrained('panen')->onDelete('cascade');
             $table->date('tanggal_jual');
             $table->string('pembeli');
             $table->decimal('jumlah_kg', 10, 2);

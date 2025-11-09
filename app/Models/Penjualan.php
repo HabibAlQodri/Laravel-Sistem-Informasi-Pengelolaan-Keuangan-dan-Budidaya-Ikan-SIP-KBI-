@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Penjualan extends Model
 {
+    use HasFactory;
+
     protected $table = 'penjualan';
-    protected $primaryKey = 'id_penjualan';
     protected $fillable = [
-        'id_panen', 'tanggal_jual', 'pembeli', 'jumlah_kg',
+        'panen_id', 'tanggal_jual', 'pembeli', 'jumlah_kg',
         'harga_per_kg', 'total_jual', 'metode_bayar'
     ];
-    protected $casts = ['tanggal_jual' => 'date'];
 
     public function panen()
     {
-        return $this->belongsTo(Panen::class, 'id_panen');
+        return $this->belongsTo(Panen::class, 'panen_id');
     }
 }

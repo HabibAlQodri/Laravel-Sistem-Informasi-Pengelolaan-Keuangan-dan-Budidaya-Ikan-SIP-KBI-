@@ -3,25 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Kolam;
+use App\Models\LaporanKeuangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class KolamController extends Controller
+class LaporanKeuanganController extends Controller
 {
     public function index()
     {
         try {
-            $kolam = Kolam::all();
+            $laporanKeuangan = LaporanKeuangan::orderBy('bulan', 'desc')->get();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil dimuat',
-                'data' => $kolam
+                'data' => $laporanKeuangan
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('Error loading kolam: ' . $e->getMessage());
+            Log::error('Error loading laporan keuangan: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -34,19 +34,21 @@ class KolamController extends Controller
     {
         try {
             $validated = $request->validate([
-                'nama_kolam' => 'required|string|max:255',
-                'lokasi' => 'required|string|max:255',
-                'luas_m2' => 'required|numeric|min:0',
-                'kapasitas_ikan' => 'required|integer|min:0',
-                'status' => 'required|in:aktif,nonaktif'
+                'bulan' => 'required|date',
+                'total_pendapatan' => 'required|numeric|min:0',
+                'total_pengeluaran' => 'required|numeric|min:0',
+                'catatan' => 'nullable|string'
             ]);
 
-            $kolam = Kolam::create($validated);
+            // Hitung laba bersih otomatis
+            $validated['laba_bersih'] = $validated['total_pendapatan'] - $validated['total_pengeluaran'];
+
+            $laporanKeuangan = LaporanKeuangan::create($validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil disimpan',
-                'data' => $kolam
+                'data' => $laporanKeuangan
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -57,7 +59,7 @@ class KolamController extends Controller
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('Error storing kolam: ' . $e->getMessage());
+            Log::error('Error storing laporan keuangan: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -69,22 +71,24 @@ class KolamController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $kolam = Kolam::findOrFail($id);
+            $laporanKeuangan = LaporanKeuangan::findOrFail($id);
 
             $validated = $request->validate([
-                'nama_kolam' => 'required|string|max:255',
-                'lokasi' => 'required|string|max:255',
-                'luas_m2' => 'required|numeric|min:0',
-                'kapasitas_ikan' => 'required|integer|min:0',
-                'status' => 'required|in:aktif,nonaktif'
+                'bulan' => 'required|date',
+                'total_pendapatan' => 'required|numeric|min:0',
+                'total_pengeluaran' => 'required|numeric|min:0',
+                'catatan' => 'nullable|string'
             ]);
 
-            $kolam->update($validated);
+            // Hitung laba bersih otomatis
+            $validated['laba_bersih'] = $validated['total_pendapatan'] - $validated['total_pengeluaran'];
+
+            $laporanKeuangan->update($validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil diupdate',
-                'data' => $kolam
+                'data' => $laporanKeuangan
             ], 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -101,7 +105,7 @@ class KolamController extends Controller
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('Error updating kolam: ' . $e->getMessage());
+            Log::error('Error updating laporan keuangan: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -113,8 +117,8 @@ class KolamController extends Controller
     public function destroy($id)
     {
         try {
-            $kolam = Kolam::findOrFail($id);
-            $kolam->delete();
+            $laporanKeuangan = LaporanKeuangan::findOrFail($id);
+            $laporanKeuangan->delete();
 
             return response()->json([
                 'success' => true,
@@ -128,7 +132,7 @@ class KolamController extends Controller
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('Error deleting kolam: ' . $e->getMessage());
+            Log::error('Error deleting laporan keuangan: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,

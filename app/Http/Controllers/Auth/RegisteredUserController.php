@@ -9,8 +9,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Validator;
 
 class RegisteredUserController extends Controller
 {
@@ -27,47 +29,248 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'role' => ['required', 'in:admin,user'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        try {
+            // Jika request dari form registrasi publik (bukan API admin)
+            if ($request->expectsJson()) {
+                // Untuk admin menambah user baru via API
+                $validated = $request->validate([
+                    'name' => ['required', 'string', 'max:255'],
+                    'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+                    'password' => ['required', 'confirmed', Rules\Password::defaults()],
+                ], [
+                    'name.required' => 'Nama wajib diisi',
+                    'email.required' => 'Email wajib diisi',
+                    'email.email' => 'Format email tidak valid',
+                    'email.unique' => 'Email sudah terdaftar',
+                    'password.required' => 'Password wajib diisi',
+                    'password.confirmed' => 'Konfirmasi password tidak sesuai',
+                ]);
 
-    // Cek apakah ada admin yang sudah terdaftar
-    $adminExists = User::where('role', 'admin')->exists();
+                // Tentukan role berdasarkan email (aturan otomatis)
+                $role = in_array($validated['email'], ['desi.gc123@gmail.com', 'admin2@gmail.com']) ? 'admin' : 'user';
 
-    // Jika sudah ada admin dan user mencoba daftar sebagai admin, tolak
-    if ($request->role === 'admin' && $adminExists) {
-        return back()->withErrors([
-            'role' => 'Registrasi admin tidak diizinkan. Silakan hubungi administrator.'
-        ])->withInput();
-    }
+                $user = User::create([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'password' => Hash::make($validated['password']),
+                    'role' => $role,
+                ]);
 
-    // Atau batasi: hanya email tertentu yang bisa jadi admin
-    $allowedAdminEmails = ['desi.gc123@gmail.com', 'admin@sipkbi.com'];
-    if ($request->role === 'admin' && !in_array($request->email, $allowedAdminEmails)) {
-        return back()->withErrors([
-            'role' => 'Email Anda tidak memiliki izin untuk mendaftar sebagai admin.'
-        ])->withInput();
-    }
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User berhasil ditambahkan',
+                    'data' => $user
+                ], 201);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role,
-            'password' => Hash::make($request->password),
-        ]);
+            } else {
+                // Untuk registrasi publik
+                $request->validate([
+                    'name' => ['required', 'string', 'max:255'],
+                    'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+                    'password' => ['required', 'confirmed', Rules\Password::defaults()],
+                ]);
 
-        event(new Registered($user));
+                // Tentukan role berdasarkan email (aturan otomatis)
+                $role = in_array($request->email, ['desi.gc123@gmail.com', 'admin2@gmail.com']) ? 'admin' : 'user';
 
-        Auth::login($user);
-        if ($user->isAdmin()) {
-        return redirect()->route('admin.dashboard');
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                    'role' => $role,
+                ]);
+
+                event(new Registered($user));
+                Auth::login($user);
+
+                return redirect(route('dashboard', absolute: false));
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+
+        } catch (\Exception $e) {
+            Log::error('Error storing user: ' . $e->getMessage());
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menambahkan user: ' . $e->getMessage()
+                ], 500);
+            }
+            throw $e;
         }
+    }
 
-        return redirect(route('dashboard', absolute: false));
+    /**
+     * Display a listing of users (untuk admin).
+     */
+    public function index()
+    {
+        try {
+            $users = User::orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data user berhasil dimuat',
+                'data' => $users
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading users: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data user: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Display the specified user.
+     */
+    public function show($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data user berhasil dimuat',
+                'data' => $user
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan'
+            ], 404);
+
+        } catch (\Exception $e) {
+            Log::error('Error showing user: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data user: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update the specified user (untuk admin).
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            $rules = [
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
+            ];
+
+            // Jika password diisi, tambahkan validasi password
+            if ($request->filled('password')) {
+                $rules['password'] = ['required', 'confirmed', Rules\Password::defaults()];
+            }
+
+            $validated = $request->validate($rules, [
+                'name.required' => 'Nama wajib diisi',
+                'email.required' => 'Email wajib diisi',
+                'email.email' => 'Format email tidak valid',
+                'email.unique' => 'Email sudah terdaftar',
+                'password.required' => 'Password wajib diisi',
+                'password.confirmed' => 'Konfirmasi password tidak sesuai',
+            ]);
+
+            // Tentukan role berdasarkan email (aturan otomatis)
+            $role = in_array($validated['email'], ['desi.gc123@gmail.com', 'admin2@gmail.com']) ? 'admin' : 'user';
+
+            $user->name = $validated['name'];
+            $user->email = $validated['email'];
+            $user->role = $role;
+
+            // Update password hanya jika diisi
+            if ($request->filled('password')) {
+                $user->password = Hash::make($validated['password']);
+            }
+
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User berhasil diperbarui',
+                'data' => $user
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan'
+            ], 404);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Error updating user: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui user: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove the specified user (untuk admin).
+     */
+    public function destroy($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            // Cek apakah user yang akan dihapus adalah user yang sedang login
+            if (Auth::check() && Auth::id() == $id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menghapus akun Anda sendiri'
+                ], 403);
+            }
+
+            $user->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User berhasil dihapus'
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan'
+            ], 404);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting user: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus user: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

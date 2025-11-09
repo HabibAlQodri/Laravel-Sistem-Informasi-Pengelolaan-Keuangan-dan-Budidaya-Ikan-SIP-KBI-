@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('panen', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_kolam')->constrained('kolam')->onDelete('cascade');
-            $table->foreignId('id_jenis')->constrained('jenis_ikan')->onDelete('cascade');
+            $table->foreignId('kolam_id')->constrained('kolam')->onDelete('cascade');
+            $table->foreignId('jenis_id')->constrained('jenis_ikan')->onDelete('cascade');
             $table->date('tanggal_panen');
             $table->decimal('berat_total_kg', 10, 2);
             $table->integer('jumlah_ikan');

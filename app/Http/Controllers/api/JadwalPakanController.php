@@ -3,25 +3,27 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\JadwalPakan;
 use App\Models\Kolam;
+use App\Models\Pakan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class KolamController extends Controller
+class JadwalPakanController extends Controller
 {
     public function index()
     {
         try {
-            $kolam = Kolam::all();
+            $jadwalPakan = JadwalPakan::with(['kolam', 'pakan'])->get();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil dimuat',
-                'data' => $kolam
+                'data' => $jadwalPakan
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('Error loading kolam: ' . $e->getMessage());
+            Log::error('Error loading jadwal pakan: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -30,23 +32,48 @@ class KolamController extends Controller
         }
     }
 
+    public function getOptions()
+    {
+        try {
+            $kolam = Kolam::select('id', 'nama_kolam')->where('status', 'aktif')->get();
+            $pakan = Pakan::select('id', 'nama_pakan')->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'kolam' => $kolam,
+                    'pakan' => $pakan
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error loading options: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat options: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
             $validated = $request->validate([
-                'nama_kolam' => 'required|string|max:255',
-                'lokasi' => 'required|string|max:255',
-                'luas_m2' => 'required|numeric|min:0',
-                'kapasitas_ikan' => 'required|integer|min:0',
-                'status' => 'required|in:aktif,nonaktif'
+                'kolam_id' => 'required|exists:kolam,id',
+                'pakan_id' => 'required|exists:pakan,id',
+                'tanggal' => 'required|date',
+                'jumlah_kg' => 'required|numeric|min:0',
+                'catatan' => 'nullable|string'
             ]);
 
-            $kolam = Kolam::create($validated);
+            $jadwalPakan = JadwalPakan::create($validated);
+            $jadwalPakan->load(['kolam', 'pakan']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil disimpan',
-                'data' => $kolam
+                'data' => $jadwalPakan
             ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -57,7 +84,7 @@ class KolamController extends Controller
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('Error storing kolam: ' . $e->getMessage());
+            Log::error('Error storing jadwal pakan: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -69,22 +96,23 @@ class KolamController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $kolam = Kolam::findOrFail($id);
+            $jadwalPakan = JadwalPakan::findOrFail($id);
 
             $validated = $request->validate([
-                'nama_kolam' => 'required|string|max:255',
-                'lokasi' => 'required|string|max:255',
-                'luas_m2' => 'required|numeric|min:0',
-                'kapasitas_ikan' => 'required|integer|min:0',
-                'status' => 'required|in:aktif,nonaktif'
+                'kolam_id' => 'required|exists:kolam,id',
+                'pakan_id' => 'required|exists:pakan,id',
+                'tanggal' => 'required|date',
+                'jumlah_kg' => 'required|numeric|min:0',
+                'catatan' => 'nullable|string'
             ]);
 
-            $kolam->update($validated);
+            $jadwalPakan->update($validated);
+            $jadwalPakan->load(['kolam', 'pakan']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil diupdate',
-                'data' => $kolam
+                'data' => $jadwalPakan
             ], 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -101,7 +129,7 @@ class KolamController extends Controller
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('Error updating kolam: ' . $e->getMessage());
+            Log::error('Error updating jadwal pakan: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -113,8 +141,8 @@ class KolamController extends Controller
     public function destroy($id)
     {
         try {
-            $kolam = Kolam::findOrFail($id);
-            $kolam->delete();
+            $jadwalPakan = JadwalPakan::findOrFail($id);
+            $jadwalPakan->delete();
 
             return response()->json([
                 'success' => true,
@@ -128,7 +156,7 @@ class KolamController extends Controller
             ], 404);
 
         } catch (\Exception $e) {
-            Log::error('Error deleting kolam: ' . $e->getMessage());
+            Log::error('Error deleting jadwal pakan: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,

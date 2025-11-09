@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard | SIP-KBI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,23 +20,6 @@
             }
         }
     </script>
-
-    <style>
-        /* Modal transition (halus) */
-        .modal-transition {
-            transition: opacity .18s ease, transform .18s ease;
-        }
-        .modal-hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(-6px) scale(.99);
-        }
-        .modal-visible {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0) scale(1);
-        }
-    </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition duration-500">
 
@@ -227,7 +211,7 @@
                     </div>
 
                     <form id="kolam-form" class="space-y-4" novalidate>
-                        <input type="hidden" id="id_kolam">
+                        <input type="hidden" id="id">
 
                         <div>
                             <label class="block text-sm font-medium mb-2">Nama Kolam</label>
@@ -318,6 +302,240 @@
                 overlay.classList.add('hidden');
             });
         }
+
+        // Modal Management
+        const modalRoot = document.getElementById('modal-root');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const kolamForm = document.getElementById('kolam-form');
+
+        let isEditMode = false;
+
+        function openModal(mode, data = null) {
+            isEditMode = mode === 'edit';
+            modalTitle.textContent = isEditMode ? 'Edit Kolam' : 'Tambah Kolam';
+
+            if (isEditMode && data) {
+                document.getElementById('id').value = data.id;
+                document.getElementById('nama_kolam').value = data.nama_kolam;
+                document.getElementById('lokasi').value = data.lokasi;
+                document.getElementById('luas_m2').value = data.luas_m2;
+                document.getElementById('kapasitas_ikan').value = data.kapasitas_ikan;
+                document.getElementById('status').value = data.status;
+            } else {
+                kolamForm.reset();
+                document.getElementById('id').value = '';
+            }
+
+            modalRoot.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('modal-hidden');
+                modal.classList.add('modal-visible');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.remove('modal-visible');
+            modal.classList.add('modal-hidden');
+            setTimeout(() => {
+                modalRoot.classList.add('hidden');
+                kolamForm.reset();
+            }, 180);
+        }
+
+        modalCloseBtn.addEventListener('click', closeModal);
+        modalCancelBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', closeModal);
+
+        // Escape key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modalRoot.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        // Get CSRF Token
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        }
+
+        // Load Data Kolam
+        async function loadKolam() {
+            try {
+                const response = await fetch('/api/kolam', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Gagal memuat data');
+
+                const result = await response.json();
+                const data = result.data || [];
+
+                renderTable(data);
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Gagal memuat data kolam', 'error');
+            }
+        }
+
+        // Render Table
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            Belum ada data kolam
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map((item, index) => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td class="px-6 py-4 text-sm">${index + 1}</td>
+                    <td class="px-6 py-4 text-sm font-medium">${item.nama_kolam}</td>
+                    <td class="px-6 py-4 text-sm">${item.lokasi}</td>
+                    <td class="px-6 py-4 text-sm">${parseFloat(item.luas_m2).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-sm">${parseInt(item.kapasitas_ikan).toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full ${
+                            item.status === 'aktif'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }">
+                            ${item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center space-x-2">
+                            <button onclick='editKolam(${JSON.stringify(item)})' class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" title="Edit">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="deleteKolam(${item.id})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Hapus">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Submit Form
+        kolamForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                nama_kolam: document.getElementById('nama_kolam').value,
+                lokasi: document.getElementById('lokasi').value,
+                luas_m2: document.getElementById('luas_m2').value,
+                kapasitas_ikan: document.getElementById('kapasitas_ikan').value,
+                status: document.getElementById('status').value
+            };
+
+            try {
+                let url = '/api/kolam';
+                let method = 'POST';
+
+                if (isEditMode) {
+                    const id = document.getElementById('id').value;
+                    url = `/api/kolam/${id}`;
+                    method = 'PUT';
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menyimpan data');
+                }
+
+                showAlert(result.message || 'Data berhasil disimpan', 'success');
+                closeModal();
+                loadKolam();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Gagal menyimpan data', 'error');
+            }
+        });
+
+        // Edit Kolam
+        function editKolam(data) {
+            openModal('edit', data);
+        }
+
+        // Delete Kolam
+        async function deleteKolam(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus data kolam ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/kolam/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menghapus data');
+                }
+
+                showAlert(result.message || 'Data berhasil dihapus', 'success');
+                loadKolam();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Gagal menghapus data', 'error');
+            }
+        }
+
+        // Show Alert
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+
+            alertDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+            alertDiv.textContent = message;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadKolam();
+        });
     </script>
 </body>
 </html>

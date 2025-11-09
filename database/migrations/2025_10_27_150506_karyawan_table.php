@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('gaji_karyawan', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_pegawai')->constrained('pegawai')->onDelete('cascade');
+            $table->foreignId('pegawai_id')->constrained('pegawai')->onDelete('cascade');
             $table->date('bulan');
             $table->decimal('jumlah_gaji', 10, 2);
             $table->decimal('bonus', 10, 2)->default(0);

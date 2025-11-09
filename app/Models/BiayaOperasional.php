@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BiayaOperasional extends Model
 {
+    use HasFactory;
+
     protected $table = 'biaya_operasional';
-    protected $primaryKey = 'id_biaya';
-    protected $fillable = ['bulan', 'listrik', 'air', 'transportasi', 'lainnya', 'total_biaya'];
-    protected $casts = ['bulan' => 'date'];
+    protected $fillable = [
+        'bulan', 'listrik', 'air', 'transportasi', 'lainnya', 'total_biaya'
+    ];
 }

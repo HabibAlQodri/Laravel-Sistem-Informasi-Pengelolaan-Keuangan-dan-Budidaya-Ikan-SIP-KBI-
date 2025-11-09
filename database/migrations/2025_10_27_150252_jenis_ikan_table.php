@@ -11,8 +11,9 @@ return new class extends Migration
         Schema::create('jenis_ikan', function (Blueprint $table) {
             $table->id();
             $table->string('nama_ikan');
+            $table->decimal('Berat', total: 10, places: 2);
             $table->integer('masa_panen_hari');
-            $table->decimal('harga_per_kg', 10, 2);
+            $table->float('harga_per_kg');
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });

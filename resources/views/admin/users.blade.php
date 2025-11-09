@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User | SIP-KBI</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Kelola User | SIP-KBI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -19,6 +19,19 @@
             }
         }
     </script>
+    <style>
+        .modal-transition {
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+        .modal-hidden {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition duration-500">
 
@@ -62,7 +75,7 @@
                             </svg>
                             Biaya Operasional
                         </a>
-                        <a href="{{ route('admin.pengeluaran') }}" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-1 {{ request()->routeIs('admin.penjualan') ? 'bg-sipkbi-green text-white' : 'hover:bg-sipkbi-green hover:text-white' }} transition">
+                        <a href="{{ route('admin.pengeluaran') }}" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-1 {{ request()->routeIs('admin.pengeluaran') ? 'bg-sipkbi-green text-white' : 'hover:bg-sipkbi-green hover:text-white' }} transition">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                             </svg>
@@ -126,7 +139,7 @@
                         </a>
                         <a href="{{ route('admin.users') }}" class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-1 {{ request()->routeIs('admin.users') ? 'bg-sipkbi-green text-white' : 'hover:bg-sipkbi-green hover:text-white' }} transition">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                             Kelola User
                         </a>
@@ -152,71 +165,404 @@
 
         <!-- Main Content -->
         <main class="flex-1 lg:ml-64">
-            <!-- Top Bar -->
             <div class="bg-white dark:bg-gray-800 shadow-sm p-4 flex items-center justify-between sticky top-0 z-30">
                 <button id="open-sidebar" class="lg:hidden">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <h1 class="text-xl font-bold">Dashboard User</h1>
+                <h1 class="text-xl font-bold">Kelola User</h1>
                 <div class="flex items-center space-x-3">
                     <span class="text-sm">{{ Auth::user()->name }}</span>
                 </div>
             </div>
 
-            <!-- Dashboard Section -->
             <div class="p-6">
-                <h2 class="text-2xl font-bold mb-6">Dashboard Utama</h2>
+                <div class="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                            Daftar Pengguna Terdaftar
+                        </h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            User dapat mendaftar melalui halaman registrasi publik
+                        </p>
+                    </div>
+                    <button onclick="loadData()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-sipkbi-green text-white">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">No</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Nama</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Tanggal Daftar</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <!-- JavaScript -->
+    <!-- Modal Form -->
+    <div id="modal-root" class="fixed inset-0 z-50 hidden">
+        <div id="modal-overlay" class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div id="modal" class="modal-transition modal-hidden fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="modal-title" class="text-2xl font-bold">Tambah User</h2>
+                        <button id="modal-close-btn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form id="user-form" class="space-y-4" novalidate>
+                        <input type="hidden" id="id">
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Nama Lengkap</label>
+                            <input type="text" id="name" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Email</label>
+                            <input type="email" id="email" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Role</label>
+                            <select id="role" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                <option value="">Pilih Role</option>
+                                <option value="admin">Admin</option>
+                                <option value="user">User</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                            <p class="text-xs text-gray-500 mt-1">Kosongkan jika tidak ingin mengubah password</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Konfirmasi Password</label>
+                            <input type="password" id="password_confirmation" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" id="modal-cancel-btn" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                                Batal
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-sipkbi-green hover:bg-sipkbi-dark text-white rounded-lg transition">
+                                Simpan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Dark Mode Toggle
+        // Dark Mode & Sidebar
         const toggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
-
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            html.classList.add('dark');
-            toggle.textContent = '🌙';
-        } else {
-            html.classList.remove('dark');
-            toggle.textContent = '🌞';
-        }
-
-        toggle.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            const isDark = html.classList.contains('dark');
-            toggle.textContent = isDark ? '🌙' : '🌞';
-            localStorage.theme = isDark ? 'dark' : 'light';
-
-            // Update charts when theme changes
-            updateChartColors();
-        });
-
-        // Mobile Sidebar Toggle
         const openSidebar = document.getElementById('open-sidebar');
         const closeSidebar = document.getElementById('close-sidebar');
         const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebar-overlay');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+        if (toggle) {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                html.classList.add('dark');
+                toggle.textContent = '🌙';
+            } else {
+                html.classList.remove('dark');
+                toggle.textContent = '🌞';
+            }
+
+            toggle.addEventListener('click', () => {
+                html.classList.toggle('dark');
+                const isDark = html.classList.contains('dark');
+                toggle.textContent = isDark ? '🌙' : '🌞';
+                localStorage.theme = isDark ? 'dark' : 'light';
+            });
+        }
 
         openSidebar.addEventListener('click', () => {
             sidebar.classList.remove('-translate-x-full');
-            overlay.classList.remove('hidden');
+            sidebarOverlay.classList.remove('hidden');
         });
 
         closeSidebar.addEventListener('click', () => {
             sidebar.classList.add('-translate-x-full');
-            overlay.classList.add('hidden');
+            sidebarOverlay.classList.add('hidden');
         });
 
-        overlay.addEventListener('click', () => {
+        sidebarOverlay.addEventListener('click', () => {
             sidebar.classList.add('-translate-x-full');
-            overlay.classList.add('hidden');
+            sidebarOverlay.classList.add('hidden');
         });
 
+        // Modal Management
+        const modalRoot = document.getElementById('modal-root');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const userForm = document.getElementById('user-form');
+        const passwordInput = document.getElementById('password');
+        const passwordConfirmationInput = document.getElementById('password_confirmation');
+
+        let isEditMode = false;
+
+        function openModal(mode, data = null) {
+            isEditMode = mode === 'edit';
+            modalTitle.textContent = 'Edit User';
+
+            if (data) {
+                document.getElementById('id').value = data.id;
+                document.getElementById('name').value = data.name;
+                document.getElementById('email').value = data.email;
+                document.getElementById('role').value = data.role;
+
+                // Password tidak wajib saat edit
+                passwordInput.value = '';
+                passwordConfirmationInput.value = '';
+            }
+
+            modalRoot.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('modal-hidden');
+                modal.classList.add('modal-visible');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.remove('modal-visible');
+            modal.classList.add('modal-hidden');
+            setTimeout(() => {
+                modalRoot.classList.add('hidden');
+                userForm.reset();
+            }, 180);
+        }
+
+        modalCloseBtn.addEventListener('click', closeModal);
+        modalCancelBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', closeModal);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modalRoot.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        }
+
+        // Load Data
+        async function loadData() {
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Gagal memuat data');
+
+                const result = await response.json();
+                const data = result.data || [];
+
+                renderTable(data);
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Gagal memuat data user', 'error');
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            Belum ada data user
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map((item, index) => {
+                const roleClass = item.role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                const roleName = item.role === 'admin' ? 'Admin' : 'User';
+                const createdAt = item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+
+                return `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td class="px-6 py-4 text-sm">${index + 1}</td>
+                    <td class="px-6 py-4 text-sm font-medium">${item.name || '-'}</td>
+                    <td class="px-6 py-4 text-sm">${item.email || '-'}</td>
+                    <td class="px-6 py-4 text-sm">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${roleClass}">
+                            ${roleName}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm">${createdAt}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex justify-center space-x-2">
+                            <button onclick='editData(${JSON.stringify(item)})' class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" title="Edit">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="deleteData(${item.id})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Hapus">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Submit Form
+        userForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const password = document.getElementById('password').value;
+            const passwordConfirmation = document.getElementById('password_confirmation').value;
+
+            // Validasi password jika diisi
+            if (password || passwordConfirmation) {
+                if (password.length < 8) {
+                    showAlert('Password minimal 8 karakter', 'error');
+                    return;
+                }
+
+                if (password !== passwordConfirmation) {
+                    showAlert('Konfirmasi password tidak sesuai', 'error');
+                    return;
+                }
+            }
+
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                role: document.getElementById('role').value
+            };
+
+            // Hanya tambahkan password jika diisi
+            if (password) {
+                formData.password = password;
+                formData.password_confirmation = passwordConfirmation;
+            }
+
+            try {
+                const id = document.getElementById('id').value;
+                const url = `/api/users/${id}`;
+                const method = 'PUT';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menyimpan data');
+                }
+
+                showAlert(result.message || 'Data berhasil disimpan', 'success');
+                closeModal();
+                loadData();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Gagal menyimpan data', 'error');
+            }
+        });
+
+        function editData(data) {
+            openModal('edit', data);
+        }
+
+        async function deleteData(id) {
+            if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken()
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Gagal menghapus data');
+                }
+
+                showAlert(result.message || 'Data berhasil dihapus', 'success');
+                loadData();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'Gagal menghapus data', 'error');
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+
+            alertDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+            alertDiv.textContent = message;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
     </script>
 </body>
 </html>

@@ -6,6 +6,20 @@ use App\Http\Controllers\User\DashboardController as UserDashboard;
 use App\Http\Controllers\Dokumen\DokumenController;
 use Illuminate\Support\Facades\Route;
 
+// Import API Controllers
+use App\Http\Controllers\Api\KolamController;
+use App\Http\Controllers\Api\PakanController;
+use App\Http\Controllers\Api\JadwalPakanController;
+use App\Http\Controllers\Api\PanenController;
+use App\Http\Controllers\Api\PenjualanController;
+use App\Http\Controllers\Api\PengeluaranController;
+use App\Http\Controllers\Api\JenisIkanController;
+use App\Http\Controllers\Api\PegawaiController;
+use App\Http\Controllers\Api\GajiKaryawanController;
+use App\Http\Controllers\Api\BiayaOperasionalController;
+use App\Http\Controllers\Api\LaporanKeuanganController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+
 Route::get('/', function () {
     return view('main.welcome');
 });
@@ -21,6 +35,7 @@ Route::get('/dashboard', function () {
 // Admin Routes
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+
     // Keuangan Routes
     Route::get('/keuangan', function () {
         return view('admin.laporanKeuangan');
@@ -65,13 +80,12 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     })->name('pegawai');
 
     Route::get('/gaji', function () {
-        return view(view: 'admin.gajiKaryawan');
+        return view('admin.gajiKaryawan');
     })->name('gaji');
 
     Route::get('/users', function () {
         return view('admin.users');
     })->name('users');
-
 });
 
 // User Routes
@@ -135,6 +149,93 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('api')->group(function () {
+
+    // Kolam API
+    Route::get('/kolam', [KolamController::class, 'index']);
+    Route::post('/kolam', [KolamController::class, 'store']);
+    Route::get('/kolam/{kolam}', [KolamController::class, 'show']);
+    Route::put('/kolam/{kolam}', [KolamController::class, 'update']);
+    Route::delete('/kolam/{kolam}', [KolamController::class, 'destroy']);
+
+    // Pakan API
+    Route::get('/pakan', [PakanController::class, 'index']);
+    Route::post('/pakan', [PakanController::class, 'store']);
+    Route::get('/pakan/{pakan}', [PakanController::class, 'show']);
+    Route::put('/pakan/{pakan}', [PakanController::class, 'update']);
+    Route::delete('/pakan/{pakan}', [PakanController::class, 'destroy']);
+
+    // Jadwal Pakan API
+    Route::get('/jadwal-pakan', [JadwalPakanController::class, 'index']);
+    Route::post('/jadwal-pakan', [JadwalPakanController::class, 'store']);
+    Route::get('/jadwal-pakan/{jadwalPakan}', [JadwalPakanController::class, 'show']);
+    Route::put('/jadwal-pakan/{jadwalPakan}', [JadwalPakanController::class, 'update']);
+    Route::delete('/jadwal-pakan/{jadwalPakan}', [JadwalPakanController::class, 'destroy']);
+
+    // Panen API
+    Route::get('/panen', [PanenController::class, 'index']);
+    Route::post('/panen', [PanenController::class, 'store']);
+    Route::get('/panen/{panen}', [PanenController::class, 'show']);
+    Route::put('/panen/{panen}', [PanenController::class, 'update']);
+    Route::delete('/panen/{panen}', [PanenController::class, 'destroy']);
+
+    // Penjualan API
+    Route::get('/penjualan', [PenjualanController::class, 'index']);
+    Route::post('/penjualan', [PenjualanController::class, 'store']);
+    Route::get('/penjualan/{penjualan}', [PenjualanController::class, 'show']);
+    Route::put('/penjualan/{penjualan}', [PenjualanController::class, 'update']);
+    Route::delete('/penjualan/{penjualan}', [PenjualanController::class, 'destroy']);
+
+    // Pengeluaran API
+    Route::get('/pengeluaran', [PengeluaranController::class, 'index']);
+    Route::post('/pengeluaran', [PengeluaranController::class, 'store']);
+    Route::get('/pengeluaran/{pengeluaran}', [PengeluaranController::class, 'show']);
+    Route::put('/pengeluaran/{pengeluaran}', [PengeluaranController::class, 'update']);
+    Route::delete('/pengeluaran/{pengeluaran}', [PengeluaranController::class, 'destroy']);
+
+    // Jenis Ikan API
+    Route::get('/jenis-ikan', [JenisIkanController::class, 'index']);
+    Route::post('/jenis-ikan', [JenisIkanController::class, 'store']);
+    Route::get('/jenis-ikan/{jenisIkan}', [JenisIkanController::class, 'show']);
+    Route::put('/jenis-ikan/{jenisIkan}', [JenisIkanController::class, 'update']);
+    Route::delete('/jenis-ikan/{jenisIkan}', [JenisIkanController::class, 'destroy']);
+
+    // Pegawai API
+    Route::get('/pegawai', [PegawaiController::class, 'index']);
+    Route::post('/pegawai', [PegawaiController::class, 'store']);
+    Route::get('/pegawai/{pegawai}', [PegawaiController::class, 'show']);
+    Route::put('/pegawai/{pegawai}', [PegawaiController::class, 'update']);
+    Route::delete('/pegawai/{pegawai}', [PegawaiController::class, 'destroy']);
+
+    // Gaji Karyawan API
+    Route::get('/gaji-karyawan', [GajiKaryawanController::class, 'index']);
+    Route::post('/gaji-karyawan', [GajiKaryawanController::class, 'store']);
+    Route::get('/gaji-karyawan/{gajiKaryawan}', [GajiKaryawanController::class, 'show']);
+    Route::put('/gaji-karyawan/{gajiKaryawan}', [GajiKaryawanController::class, 'update']);
+    Route::delete('/gaji-karyawan/{gajiKaryawan}', [GajiKaryawanController::class, 'destroy']);
+
+    // Biaya Operasional API
+    Route::get('/biaya-operasional', [BiayaOperasionalController::class, 'index']);
+    Route::post('/biaya-operasional', [BiayaOperasionalController::class, 'store']);
+    Route::get('/biaya-operasional/{biayaOperasional}', [BiayaOperasionalController::class, 'show']);
+    Route::put('/biaya-operasional/{biayaOperasional}', [BiayaOperasionalController::class, 'update']);
+    Route::delete('/biaya-operasional/{biayaOperasional}', [BiayaOperasionalController::class, 'destroy']);
+
+    // Laporan Keuangan API
+    Route::get('/laporan-keuangan', [LaporanKeuanganController::class, 'index']);
+    Route::post('/laporan-keuangan', [LaporanKeuanganController::class, 'store']);
+    Route::get('/laporan-keuangan/{laporanKeuangan}', [LaporanKeuanganController::class, 'show']);
+    Route::put('/laporan-keuangan/{laporanKeuangan}', [LaporanKeuanganController::class, 'update']);
+    Route::delete('/laporan-keuangan/{laporanKeuangan}', [LaporanKeuanganController::class, 'destroy']);
+
+    // Users API
+    Route::get('/users', [RegisteredUserController::class, 'index']);
+    Route::post('/users', [RegisteredUserController::class, 'store']);
+    Route::get('/users/{users}', [RegisteredUserController::class, 'show']);
+    Route::put('/users/{users}', [RegisteredUserController::class, 'update']);
+    Route::delete('/users/{users}', [RegisteredUserController::class, 'destroy']);
 });
 
 require __DIR__.'/auth.php';

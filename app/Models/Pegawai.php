@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Pegawai extends Model
 {
+    use HasFactory;
+
     protected $table = 'pegawai';
-    protected $primaryKey = 'id_pegawai';
-    protected $fillable = ['nama', 'jabatan', 'tanggal_masuk', 'gaji_pokok'];
-    protected $casts = ['tanggal_masuk' => 'date'];
+    protected $fillable = [
+        'nama', 'jabatan', 'tanggal_masuk', 'gaji_pokok'
+    ];
 
     public function gajiKaryawan()
     {
-        return $this->hasMany(GajiKaryawan::class, 'id_pegawai');
+        return $this->hasMany(GajiKaryawan::class, 'pegawai_id');
     }
 }
-
