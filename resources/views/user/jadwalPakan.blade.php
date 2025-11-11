@@ -20,6 +20,21 @@
             }
         }
     </script>
+    <style>
+        .modal-transition {
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+
+        .modal-hidden {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .modal-visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition duration-500">
 
@@ -136,6 +151,9 @@
             </div>
         </aside>
 
+        <!-- Sidebar Overlay for Mobile -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden"></div>
+
         <!-- Main Content -->
         <main class="flex-1 lg:ml-64">
             <!-- Top Bar -->
@@ -149,7 +167,7 @@
                 <div class="flex items-center space-x-3">
                     <span class="text-sm">{{ Auth::user()->name }}</span>
                 </div>
-                </div>
+            </div>
 
             <!-- Content Section -->
             <div class="p-6">
@@ -186,69 +204,70 @@
                 </div>
             </div>
         </main>
+    </div>
 
-        <!-- Modal Form -->
-        <div id="modal-root" class="fixed inset-0 z-50 hidden">
-            <div id="modal-overlay" class="absolute inset-0 bg-black bg-opacity-50"></div>
-            <div id="modal" class="modal-transition modal-hidden fixed inset-0 flex items-center justify-center p-4">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                    <div class="p-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 id="modal-title" class="text-2xl font-bold">Tambah Jadwal Pakan</h2>
-                            <button id="modal-close-btn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
+    <!-- Modal Form -->
+    <div id="modal-root" class="fixed inset-0 z-50 hidden">
+        <div id="modal-overlay" class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div id="modal" class="modal-transition modal-hidden fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="modal-title" class="text-2xl font-bold">Tambah Jadwal Pakan</h2>
+                        <button id="modal-close-btn" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form id="jadwal-form" class="space-y-4">
+                        <input type="hidden" id="id">
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Kolam</label>
+                            <select id="kolam_id" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                <option value="">Pilih Kolam</option>
+                            </select>
                         </div>
 
-                        <form id="jadwal-form" class="space-y-4">
-                            <input type="hidden" id="id">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Pakan</label>
+                            <select id="pakan_id" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
+                                <option value="">Pilih Pakan</option>
+                            </select>
+                        </div>
 
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium mb-2">Kolam</label>
-                                <select id="kolam_id" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
-                                    <option value="">Pilih Kolam</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium mb-2">Pakan</label>
-                                <select id="pakan_id" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
-                                    <option value="">Pilih Pakan</option>
-                                </select>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Tanggal</label>
-                                    <input type="date" id="tanggal" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Jumlah (Kg)</label>
-                                    <input type="number" step="0.01" id="jumlah_kg" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
-                                </div>
+                                <label class="block text-sm font-medium mb-2">Tanggal</label>
+                                <input type="date" id="tanggal" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium mb-2">Catatan</label>
-                                <textarea id="catatan" rows="3" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent"></textarea>
+                                <label class="block text-sm font-medium mb-2">Jumlah (Kg)</label>
+                                <input type="number" step="0.01" id="jumlah_kg" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
                             </div>
+                        </div>
 
-                            <div class="flex justify-end space-x-3 pt-4">
-                                <button type="button" id="modal-cancel-btn" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-                                    Batal
-                                </button>
-                                <button type="submit" class="px-6 py-2 bg-sipkbi-green hover:bg-sipkbi-dark text-white rounded-lg transition">
-                                    Simpan
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Catatan</label>
+                            <textarea id="catatan" rows="3" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent"></textarea>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" id="modal-cancel-btn" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                                Batal
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-sipkbi-green hover:bg-sipkbi-dark text-white rounded-lg transition">
+                                Simpan
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
+    </div>
 
     <!-- JavaScript -->
     <script>
@@ -269,9 +288,6 @@
             const isDark = html.classList.contains('dark');
             toggle.textContent = isDark ? '🌙' : '🌞';
             localStorage.theme = isDark ? 'dark' : 'light';
-
-            // Update charts when theme changes
-            updateChartColors();
         });
 
         // Mobile Sidebar Toggle
@@ -295,6 +311,7 @@
             overlay.classList.add('hidden');
         });
 
+        // Modal Functions
         const modalRoot = document.getElementById('modal-root');
         const modal = document.getElementById('modal');
         const modalTitle = document.getElementById('modal-title');
@@ -336,7 +353,7 @@
             setTimeout(() => {
                 modalRoot.classList.add('hidden');
                 jadwalForm.reset();
-            }, 180);
+            }, 200);
         }
 
         modalCloseBtn.addEventListener('click', closeModal);
@@ -359,9 +376,9 @@
                 const result = await response.json();
                 kolamList = result.data || [];
 
-                const select = document.getElementById('kolam_id');
+                const select = document.getElementById('nama_kolam');
                 select.innerHTML = '<option value="">Pilih Kolam</option>' +
-                    kolamList.map(k => `<option value="${k.id}">${k.nama_kolam}</option>`).join('');
+                    kolamList.map(k => `<option value="${k.id}">${k.kolam_id}</option>`).join('');
             } catch (error) {
                 console.error('Error loading kolam:', error);
             }

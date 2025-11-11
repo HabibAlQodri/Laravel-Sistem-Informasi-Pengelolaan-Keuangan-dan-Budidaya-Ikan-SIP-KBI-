@@ -9,24 +9,48 @@ use Illuminate\Support\Facades\Log;
 
 class KolamController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $kolam = Kolam::all();
+            $query = Kolam::query();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dimuat',
-                'data' => $kolam
-            ], 200);
+            // Perbaikan fitur search dengan grouping WHERE
+            if ($request->has('search') && !empty($request->search)) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('nama_kolam', 'like', "%{$search}%")
+                      ->orWhere('lokasi', 'like', "%{$search}%")
+                      ->orWhere('status', 'like', "%{$search}%");
+                });
+            }
+
+            // Filter berdasarkan status jika ada
+            if ($request->has('status') && !empty($request->status)) {
+                $query->where('status', $request->status);
+            }
+
+            $kolam = $query->orderBy('id', 'desc')->get();
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data berhasil dimuat',
+                    'data' => $kolam,
+                    'total' => $kolam->count()
+                ], 200);
+            }
 
         } catch (\Exception $e) {
             Log::error('Error loading kolam: ' . $e->getMessage());
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memuat data: ' . $e->getMessage()
-            ], 500);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal memuat data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->with('error', 'Gagal memuat data kolam');
         }
     }
 

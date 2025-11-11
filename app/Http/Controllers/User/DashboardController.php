@@ -17,6 +17,6 @@ class DashboardController extends Controller
     $totalPengeluaran = DB::table('laporan_keuangan')->sum('total_pengeluaran');
     $labaBersih = DB::table('laporan_keuangan')->sum('laba_bersih');
 
-    return view('admin.dashboard', compact('totalPanen','totalPenjualan','totalPendapatan','totalPengeluaran','labaBersih'));
+    return view('user.dashboard', compact('totalPanen','totalPenjualan','totalPendapatan','totalPengeluaran','labaBersih'));
     }
 }

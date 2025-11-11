@@ -123,9 +123,8 @@
             </div>
 
             <div class="p-5 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <button id="theme-toggle" class="px-3 py-2 border rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                    🌞
-                </button>
+
+                <span class="text-sm">{{ Auth::user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="text-red-500 hover:underline text-sm">
@@ -148,7 +147,9 @@
                 </button>
                 <h1 class="text-xl font-bold">Data Jenis Ikan</h1>
                 <div class="flex items-center space-x-3">
-                    <span class="text-sm">{{ Auth::user()->name }}</span>
+                    <button id="theme-toggle" class="px-3 py-2 border rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                        🌞
+                    </button>
                 </div>
             </div>
 
@@ -160,6 +161,66 @@
                         </svg>
                         <span>Tambah Jenis Ikan</span>
                     </button>
+                </div>
+
+                    <!-- Search & Filter Controls -->
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Search Input -->
+                            <div class="flex-1 min-w-[250px]">
+                                <input 
+                                    type="text" 
+                                    id="search-input"
+                                    placeholder="Cari nama ikan atau masa panen..." 
+                                    class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-sipkbi-green bg-white dark:bg-gray-700"
+                                >
+                            </div>
+
+                            <!-- Filter Status -->
+                            <div>
+                                <select 
+                                    id="status-filter"
+                                    class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sipkbi-green bg-white dark:bg-gray-700"
+                                >
+                                    <option value="">Semua Harga</option>
+                                    <option value="aktif">Termahal</option>
+                                    <option value="nonaktif">Termurah</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select 
+                                    id="status-filter"
+                                    class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sipkbi-green bg-white dark:bg-gray-700"
+                                >
+                                    <option value="">Semua Berat</option>
+                                    <option value="aktif">Terbesar</option>
+                                    <option value="nonaktif">Terkecil</option>
+                                </select>
+                            </div>
+
+                            <!-- Search Button -->
+                            <button 
+                                onclick="applyFilters()"
+                                class="bg-sipkbi-green text-white px-4 py-2 rounded-lg hover:bg-sipkbi-dark transition flex items-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                Cari
+                            </button>
+
+                            <!-- Reset Button -->
+                            <button 
+                                onclick="resetFilters()"
+                                class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition flex items-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Reset
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -389,7 +450,6 @@
                 `;
             }).join('');
         }
-
         // Submit Form
         ikanForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -436,6 +496,50 @@
                 showAlert(error.message || 'Gagal menyimpan data', 'error');
             }
         });
+
+        //search
+        async function loadjenisIkan(search = '', status = '') {
+            try {
+                const params = new URLSearchParams();
+                if (search) params.append('search', search);
+                if (status) params.append('status', status);
+                const queryString = params.toString();
+                const url = `/api/jenisIkan${queryString ? '?' + queryString : ''}`;
+
+                console.log('Loading data from:', url); // Debug
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Gagal memuat data');
+                
+                const result = await response.json();
+                console.log('API Response:', result); // Debug
+
+                const data = result.data || [];
+                renderTable(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Gagal memuat data Jenis Ikan', 'error');
+            }
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('search-input').value.trim();
+            const status = document.getElementById('status-filter').value;
+            loadjenisIkan(search, status);
+        }
+
+        function resetFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('status-filter').value = '';
+            loadjenisIkan();
+        }
 
         function editData(data) {
             openModal('edit', data);

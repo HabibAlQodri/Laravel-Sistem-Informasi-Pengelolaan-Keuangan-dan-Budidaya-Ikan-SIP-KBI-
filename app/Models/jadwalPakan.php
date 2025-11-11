@@ -11,7 +11,7 @@ class JadwalPakan extends Model
 
     protected $table = 'jadwal_pakan';
     protected $fillable = [
-        'kolam_id', 'pakan_id', 'tanggal', 'jumlah_kg', 'catatan'
+        'kolam_id', 'nama_kolam', 'pakan_id', 'tanggal', 'jumlah_kg', 'catatan'
     ];
 
     public function kolam()

@@ -124,9 +124,8 @@
             </div>
 
             <div class="p-5 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <button id="theme-toggle" class="px-3 py-2 border rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                    🌞
-                </button>
+
+                <span class="text-sm">{{ Auth::user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="text-red-500 hover:underline text-sm">
@@ -150,7 +149,9 @@
                 </button>
                 <h1 class="text-xl font-bold">Data Penjualan</h1>
                 <div class="flex items-center space-x-3">
-                    <span class="text-sm">{{ Auth::user()->name }}</span>
+                <button id="theme-toggle" class="px-3 py-2 border rounded-md text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    🌞
+                </button>
                 </div>
             </div>
 

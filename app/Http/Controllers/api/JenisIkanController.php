@@ -9,24 +9,54 @@ use Illuminate\Support\Facades\Log;
 
 class JenisIkanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $jenisIkan = JenisIkan::all();
+            $query = jenisIkan::query();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dimuat',
-                'data' => $jenisIkan
-            ], 200);
+            // Perbaikan fitur search dengan grouping WHERE
+            if ($request->has('search') && !empty($request->search)) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('nama_ikan', 'like', "%{$search}%")
+                      ->orWhere('masa_panen_hari', 'like', "%{$search}%")
+                      ->orWhere('berat', 'like', "%{$search}%")
+                      ->orWhere('harga_per_kg', 'like', "%{$search}%");
+                });
+            }
+
+            // Filter berdasarkan berat jika ada
+            if ($request->has('berat') && !empty($request->berat)) {
+                $query->where('berat', $request->berat);
+            }
+
+            // Filter berdasarkan harga jika ada
+            if ($request->has('harga_per_kg') && !empty($request->harga_per_kg)) {
+                $query->where('harga_per_kg', $request->harga_per_kg);
+            }
+
+            $jenisIkan = $query->orderBy('id', 'desc')->get();
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data berhasil dimuat',
+                    'data' => $jenisIkan,
+                    'total' => $jenisIkan->count()
+                ], 200);
+            }
 
         } catch (\Exception $e) {
-            Log::error('Error loading jenis ikan: ' . $e->getMessage());
+            Log::error('Error loading kolam: ' . $e->getMessage());
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memuat data: ' . $e->getMessage()
-            ], 500);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal memuat data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->with('error', 'Gagal memuat data Jenis Ikan');
         }
     }
 
