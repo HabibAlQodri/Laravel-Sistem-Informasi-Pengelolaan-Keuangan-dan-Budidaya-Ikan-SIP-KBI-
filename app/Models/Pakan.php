@@ -13,6 +13,6 @@ class Pakan extends Model
 
     public function jadwalPakan()
     {
-        return $this->hasMany(JadwalPakan::class, 'id_pakan');
+        return $this->hasMany(JadwalPakan::class, 'pakan_id');
     }
 }
