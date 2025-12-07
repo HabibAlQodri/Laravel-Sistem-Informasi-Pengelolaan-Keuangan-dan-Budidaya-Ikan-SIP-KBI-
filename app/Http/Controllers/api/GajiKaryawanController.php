@@ -103,7 +103,9 @@ class GajiKaryawanController extends Controller
             $validated['potongan'] = $validated['potongan'] ?? 0;
 
             // Format bulan ke YYYY-MM-01 untuk disimpan di database
-            $validated['bulan'] = $validated['bulan'] . '-01';
+            if (strlen($validated['bulan']) === 7) {
+                $validated['bulan'] = $validated['bulan'] . '-01';
+            }
 
             // Hitung total diterima otomatis
             $validated['total_diterima'] = $validated['jumlah_gaji'] +
@@ -155,7 +157,9 @@ class GajiKaryawanController extends Controller
             $validated['potongan'] = $validated['potongan'] ?? 0;
 
             // Format bulan ke YYYY-MM-01 untuk disimpan di database
-            $validated['bulan'] = $validated['bulan'] . '-01';
+            if (strlen($validated['bulan']) === 7) {
+                $validated['bulan'] = $validated['bulan'] . '-01';
+            }
 
             // Hitung total diterima otomatis
             $validated['total_diterima'] = $validated['jumlah_gaji'] +

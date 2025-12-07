@@ -21,6 +21,19 @@
             }
         }
     </script>
+    <style>
+        .modal-transition {
+            transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        }
+        .modal-hidden {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition duration-500">
@@ -79,7 +92,7 @@
                             Biaya Operasional
                         </a>
                         <a href="{{ route('admin.pengeluaran') }}"
-                            class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-1 {{ request()->routeIs('admin.penjualan') ? 'bg-sipkbi-green text-white' : 'hover:bg-sipkbi-green hover:text-white' }} transition">
+                            class="nav-link flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-1 {{ request()->routeIs('admin.pengeluaran') ? 'bg-sipkbi-green text-white' : 'hover:bg-sipkbi-green hover:text-white' }} transition">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
@@ -178,7 +191,6 @@
             </div>
 
             <div class="p-5 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-
                 <span class="text-sm">{{ Auth::user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -217,10 +229,8 @@
 
             <!-- Content Section -->
             <div class="p-6">
-
-                <!-- Header Controls (Tambah + Search + Filter) -->
+                <!-- Header Controls -->
                 <div class="flex justify-between flex-wrap items-center gap-4">
-
                     <!-- Button Tambah -->
                     <button onclick="openModal('add')"
                         class="bg-sipkbi-green hover:bg-sipkbi-dark text-white px-4 py-2 rounded-lg flex items-center gap-2 transition">
@@ -228,12 +238,11 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
                             </path>
                         </svg>
-                        <span>Tambah Pegawai</span>
+                        <span>Tambah Gaji</span>
                     </button>
 
                     <!-- Search & Filter Controls -->
                     <div class="flex flex-wrap items-center gap-3">
-
                         <!-- Search Input -->
                         <input type="text" id="search-input" placeholder="Cari nama pegawai atau jabatan..."
                             class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 h-10 w-64
@@ -251,10 +260,10 @@
                         <!-- Filter Status -->
                         <select id="filter-status"
                             class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 h-10
-        bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-sipkbi-green">
+                                    bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-sipkbi-green">
                             <option value="">Semua Status</option>
-                            <option value="belum lunas">Belum Lunas</option>
-                            <option value=" lunas">Lunas</option>
+                            <option value="Belum Lunas">Belum Lunas</option>
+                            <option value="Lunas">Lunas</option>
                         </select>
 
                         <!-- Search Button -->
@@ -278,7 +287,6 @@
                             </svg>
                             Reset
                         </button>
-
                     </div>
                 </div>
             </div>
@@ -306,8 +314,8 @@
                     </table>
                 </div>
             </div>
+        </main>
     </div>
-    </main>
 
     <!-- Modal Form -->
     <div id="modal-root" class="fixed inset-0 z-50 hidden">
@@ -373,8 +381,8 @@
                             <label class="block text-sm font-medium mb-2">Status Pembayaran</label>
                             <select id="status_bayar" required
                                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-sipkbi-green focus:border-transparent">
-                                <option value="belum lunas">Belum Lunas</option>
-                                <option value=" lunas">Lunas</option>
+                                <option value="Belum Lunas">Belum Lunas</option>
+                                <option value="Lunas">Lunas</option>
                             </select>
                         </div>
 
@@ -400,8 +408,7 @@
         const toggle = document.getElementById('theme-toggle');
         const html = document.documentElement;
 
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia(
-                '(prefers-color-scheme: dark)').matches)) {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             html.classList.add('dark');
             toggle.textContent = '🌙';
         } else {
@@ -414,9 +421,6 @@
             const isDark = html.classList.contains('dark');
             toggle.textContent = isDark ? '🌙' : '🌞';
             localStorage.theme = isDark ? 'dark' : 'light';
-
-            // Update charts when theme changes
-            updateChartColors();
         });
 
         // Mobile Sidebar Toggle
@@ -440,6 +444,7 @@
             overlay.classList.add('hidden');
         });
 
+        // Modal Controls
         const modalRoot = document.getElementById('modal-root');
         const modal = document.getElementById('modal');
         const modalTitle = document.getElementById('modal-title');
@@ -479,7 +484,14 @@
             if (isEditMode && data) {
                 document.getElementById('id').value = data.id;
                 document.getElementById('pegawai_id').value = data.pegawai_id;
-                document.getElementById('bulan').value = data.bulan;
+
+                // Format bulan untuk input type="month" (YYYY-MM)
+                let bulanValue = data.bulan;
+                if (bulanValue && bulanValue.length === 10) {
+                    bulanValue = bulanValue.substring(0, 7); // Ambil YYYY-MM saja
+                }
+                document.getElementById('bulan').value = bulanValue;
+
                 document.getElementById('jumlah_gaji').value = data.jumlah_gaji;
                 document.getElementById('bonus').value = data.bonus;
                 document.getElementById('potongan').value = data.potongan;
@@ -505,7 +517,7 @@
             setTimeout(() => {
                 modalRoot.classList.add('hidden');
                 gajiForm.reset();
-            }, 180);
+            }, 200);
         }
 
         modalCloseBtn.addEventListener('click', closeModal);
@@ -540,26 +552,18 @@
             try {
                 const params = new URLSearchParams();
 
-                // Search parameter (nama pegawai atau jabatan)
                 if (search) params.append('search', search);
-
-                // Filter gaji (high/low)
                 if (gaji) params.append('filter_gaji', gaji);
-
-                // Filter status pembayaran
                 if (status) params.append('status', status);
 
                 const queryString = params.toString();
                 const url = `/api/gaji-karyawan${queryString ? '?' + queryString : ''}`;
 
-                console.log('Loading data from:', url);
                 const response = await fetch(url);
 
                 if (!response.ok) throw new Error('Gagal memuat data');
 
                 const result = await response.json();
-                console.log('API Response:', result);
-
                 const data = result.data || [];
                 renderTable(data);
             } catch (error) {
@@ -568,7 +572,6 @@
             }
         }
 
-        // Apply filters (triggered by Cari button)
         function applyFilters() {
             const search = document.getElementById('search-input').value.trim();
             const gaji = document.getElementById('filter-gaji').value;
@@ -577,7 +580,6 @@
             loadGaji(search, gaji, status);
         }
 
-        // Reset filters
         function resetFilters() {
             document.getElementById('search-input').value = '';
             document.getElementById('filter-gaji').value = '';
@@ -585,38 +587,26 @@
             loadGaji();
         }
 
-        // Auto filter ketika dropdown berubah
-        function onFilterChange() {
-            const search = document.getElementById('search-input').value.trim();
-            const gaji = document.getElementById('filter-gaji').value;
-            const status = document.getElementById('filter-status').value;
-
-            loadGaji(search, gaji, status);
-        }
-
-        // PERBAIKI fungsi renderTable untuk mengatasi Invalid Date
         function renderTable(data) {
             const tbody = document.getElementById('table-body');
 
             if (data.length === 0) {
                 tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="px-6 py-8 text-center text-gray-500">
-                    Belum ada data gaji karyawan
-                </td>
-            </tr>
-        `;
+                    <tr>
+                        <td colspan="9" class="px-6 py-8 text-center text-gray-500">
+                            Belum ada data gaji karyawan
+                        </td>
+                    </tr>
+                `;
                 return;
             }
 
             tbody.innerHTML = data.map((item, index) => {
                 const pegawai = pegawaiList.find(p => p.id == item.pegawai_id);
 
-                // PERBAIKAN: Parse bulan dengan benar
-                // Jika bulan format YYYY-MM, tambahkan -01
+                // Parse bulan dengan benar
                 let bulanStr = item.bulan;
                 if (bulanStr && !bulanStr.includes(' ')) {
-                    // Jika format YYYY-MM, tambahkan -01
                     if (bulanStr.match(/^\d{4}-\d{2}$/)) {
                         bulanStr = bulanStr + '-01';
                     }
@@ -628,52 +618,52 @@
                     month: 'long'
                 });
 
+                // Status badge dengan warna yang tepat
+                const statusClass = item.status_bayar === 'Lunas'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100';
+
                 return `
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <td class="px-6 py-4 text-sm">${index + 1}</td>
-            <td class="px-6 py-4 text-sm font-medium">${pegawai ? pegawai.nama : '-'}</td>
-            <td class="px-6 py-4 text-sm">${bulanFormatted}</td>
-            <td class="px-6 py-4 text-sm">Rp ${parseFloat(item.jumlah_gaji).toLocaleString('id-ID')}</td>
-            <td class="px-6 py-4 text-sm text-green-600">Rp ${parseFloat(item.bonus).toLocaleString('id-ID')}</td>
-            <td class="px-6 py-4 text-sm text-red-600">Rp ${parseFloat(item.potongan).toLocaleString('id-ID')}</td>
-            <td class="px-6 py-4 text-sm font-semibold">Rp ${parseFloat(item.total_diterima).toLocaleString('id-ID')}</td>
-            <td class="px-6 py-4">
-                <span class="px-3 py-1 text-xs font-semibold rounded-full ${
-                    item.status_bayar === 'lunas'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
-                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
-                }">
-                    ${item.status_bayar.charAt(0).toUpperCase() + item.status_bayar.slice(1)}
-                </span>
-            </td>
-            <td class="px-6 py-4 text-center">
-                <div class="flex justify-center space-x-2">
-                    <button onclick='editGaji(${JSON.stringify(item)})' class="text-blue-600 hover:text-blue-800" title="Edit">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                    </button>
-                    <button onclick="deleteGaji(${item.id})" class="text-red-600 hover:text-red-800" title="Hapus">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        <td class="px-6 py-4 text-sm">${index + 1}</td>
+                        <td class="px-6 py-4 text-sm font-medium">${pegawai ? pegawai.nama : '-'}</td>
+                        <td class="px-6 py-4 text-sm">${bulanFormatted}</td>
+                        <td class="px-6 py-4 text-sm">Rp ${parseFloat(item.jumlah_gaji).toLocaleString('id-ID')}</td>
+                        <td class="px-6 py-4 text-sm text-green-600">Rp ${parseFloat(item.bonus).toLocaleString('id-ID')}</td>
+                        <td class="px-6 py-4 text-sm text-red-600">Rp ${parseFloat(item.potongan).toLocaleString('id-ID')}</td>
+                        <td class="px-6 py-4 text-sm font-semibold">Rp ${parseFloat(item.total_diterima).toLocaleString('id-ID')}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full ${statusClass}">
+                                ${item.status_bayar}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center space-x-2">
+                                <button onclick='editGaji(${JSON.stringify(item)})' class="text-blue-600 hover:text-blue-800" title="Edit">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+                                <button onclick="deleteGaji(${item.id})" class="text-red-600 hover:text-red-800" title="Hapus">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
             }).join('');
         }
 
-        // Event listeners
         document.getElementById('search-input').addEventListener('keyup', function(e) {
             if (e.key === 'Enter') {
                 applyFilters();
             }
         });
 
-        document.getElementById('filter-gaji').addEventListener('change', onFilterChange);
-        document.getElementById('filter-status').addEventListener('change', onFilterChange);
+        document.getElementById('filter-gaji').addEventListener('change', applyFilters);
+        document.getElementById('filter-status').addEventListener('change', applyFilters);
 
         gajiForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -760,8 +750,7 @@
             const alertDiv = document.createElement('div');
             const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
 
-            alertDiv.className =
-                `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+            alertDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
             alertDiv.textContent = message;
 
             document.body.appendChild(alertDiv);
